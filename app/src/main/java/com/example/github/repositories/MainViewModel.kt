@@ -1,41 +1,53 @@
 package com.example.github.repositories
 
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.example.github.repositories.data.*
-import kotlinx.coroutines.*
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
+import androidx.lifecycle.viewModelScope
+import com.example.github.repositories.data.ApiState
+import com.example.github.repositories.data.Response
+import com.example.github.repositories.usecases.SearchRepositoryUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
-class MainViewModel : ViewModel() {
+@HiltViewModel
+class MainViewModel @Inject constructor(
+    private val searchRepositoryUseCase: SearchRepositoryUseCase
+) : ViewModel() {
 
-    private val retrofit = Retrofit.Builder()
-        .baseUrl(GITHUB_URL)
-        .addConverterFactory(GsonConverterFactory.create())
-        .build()
-    private val service: GitHubEndpoints = retrofit.create(GitHubEndpoints::class.java)
+    private val _repositories: MutableLiveData<ApiState<Response>> by lazy { MutableLiveData() }
+    val repositories: LiveData<ApiState<Response>> by lazy { _repositories }
 
-    val repositories = MutableLiveData<List<RepositoryDTO>>()
 
     fun fetchItems() {
-        GlobalScope.launch(Dispatchers.Main) {
-            delay(1_000) // This is to simulate network latency, please don't remove!
-            var response: Response?
-            withContext(Dispatchers.IO) {
-                response = service.searchRepositories(QUERY, SORT, ORDER).execute().body()
+        _repositories.value = ApiState.Loading(true)
+        searchRepositoryUseCase.invoke(
+            scope = viewModelScope,
+            params = Unit,
+            onSuccess = {
+                _repositories.value = ApiState.Loading(false)
+                _repositories.value = ApiState.Success(it)
+            },
+            onFailure = {
+                _repositories.value = ApiState.Loading(false)
+                _repositories.value = ApiState.Failure(it)
             }
-            repositories.value = response?.items
-        }
+        )
     }
 
     fun refresh() {
-        GlobalScope.launch(Dispatchers.Main) {
-            delay(1_000) // This is to simulate network latency, please don't remove!
-            var response: Response?
-            withContext(Dispatchers.IO) {
-                response = service.searchRepositories(QUERY, SORT, ORDER).execute().body()
+        _repositories.value = ApiState.Loading(true)
+        searchRepositoryUseCase.invoke(
+            scope = viewModelScope,
+            params = Unit,
+            onSuccess = {
+                _repositories.value = ApiState.Loading(false)
+                _repositories.value = ApiState.Success(it)
+            },
+            onFailure = {
+                _repositories.value = ApiState.Loading(false)
+                _repositories.value = ApiState.Failure(it)
             }
-            repositories.value = response?.items
-        }
+        )
     }
 }

@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">Git Repositories</string>
+    <string name="twitter_handle">Twitter handle:  %s</string>
+    <string name="repo_created">Created by %s at %s</string>
+    <string name="repo_title_with_number">#%d : %s</string>
+    <string name="retry">Retry</string>
 </resources>
