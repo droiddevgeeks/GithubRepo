@@ -4,12 +4,11 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageView
-import android.widget.TextView
 import androidx.fragment.app.Fragment
 import com.example.github.repositories.data.LocalDataStore
 import com.example.github.repositories.data.OwnerDTO
 import com.example.github.repositories.data.RepositoryDTO
+import com.example.github.repositories.databinding.FragmentDetailBinding
 
 class DetailFragment : Fragment() {
     companion object {
@@ -22,24 +21,20 @@ class DetailFragment : Fragment() {
     }
 
     private var repository: RepositoryDTO? = null
-    private var title: TextView? = null
-    private var image: ImageView? = null
-    private var detail: TextView? = null
-    private var description: TextView? = null
-    private var url: TextView? = null
+    private var binding: FragmentDetailBinding? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        return inflater.inflate(R.layout.fragment_detail, container, false)
+        binding = FragmentDetailBinding.inflate(layoutInflater)
+        return binding?.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         initArgs()
-        initViews(view)
         setDataInUI()
     }
 
@@ -47,36 +42,30 @@ class DetailFragment : Fragment() {
         repository = arguments?.getParcelable(DATA_KEY)
     }
 
-    private fun initViews(view: View) {
-        title = view.findViewById(R.id.title)
-        image = view.findViewById(R.id.image)
-        detail = view.findViewById(R.id.detail)
-        description = view.findViewById(R.id.description)
-        url = view.findViewById(R.id.url)
-    }
-
     private fun setDataInUI() {
         repository?.let { repo ->
-            title?.text = repo.name
-            description?.text = repo.description
-            url?.text = repo.html_url
+            binding?.let { mBinding ->
+                mBinding.title.text = repo.name
+                mBinding.description.text = repo.description
+                mBinding.url.text = repo.html_url
 
-            image?.let {
-                it.setImageResource(
-                    if (LocalDataStore.instance.getBookmarks().contains(repo))
-                        R.drawable.baseline_bookmark_black_24
-                    else
-                        R.drawable.baseline_bookmark_border_black_24
-                )
-                it.setOnClickListener {
-                    val isBookmarked = LocalDataStore.instance.getBookmarks().contains(repo)
-                    LocalDataStore.instance.bookmarkRepo(repo, !isBookmarked)
-                    image?.setImageResource(if (!isBookmarked) R.drawable.baseline_bookmark_black_24 else R.drawable.baseline_bookmark_border_black_24)
+                mBinding.image.let {
+                    it.setImageResource(
+                        if (LocalDataStore.instance.getBookmarks().contains(repo))
+                            R.drawable.baseline_bookmark_black_24
+                        else
+                            R.drawable.baseline_bookmark_border_black_24
+                    )
+                    it.setOnClickListener {
+                        val isBookmarked = LocalDataStore.instance.getBookmarks().contains(repo)
+                        LocalDataStore.instance.bookmarkRepo(repo, !isBookmarked)
+                        mBinding.image.setImageResource(if (!isBookmarked) R.drawable.baseline_bookmark_black_24 else R.drawable.baseline_bookmark_border_black_24)
+                    }
                 }
-            }
-            detail?.let {
-                it.text = getString(R.string.repo_created, repo.owner?.login, repo.created_at)
-                it.setOnClickListener { repo.owner?.let { ownerDTO -> openUserFragment(ownerDTO) } }
+                mBinding.detail.let {
+                    it.text = getString(R.string.repo_created, repo.owner?.login, repo.created_at)
+                    it.setOnClickListener { repo.owner?.let { ownerDTO -> openUserFragment(ownerDTO) } }
+                }
             }
         }
     }
@@ -87,5 +76,10 @@ class DetailFragment : Fragment() {
             .replace(android.R.id.content, UserFragment.getInstance(user))
             .addToBackStack("UserFragment")
             .commit()
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        binding = null
     }
 }
